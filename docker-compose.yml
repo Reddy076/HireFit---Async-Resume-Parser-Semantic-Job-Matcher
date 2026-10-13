@@ -55,7 +55,9 @@ services:
       - kafka-data:/var/lib/kakfa/data
 
   auth-service:
-    build: ./services/auth
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
     environment:
       PORT: 8001
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -76,7 +78,9 @@ services:
       retries: 5
 
   resume-service:
-    build: ./services/resume
+    build:
+      context: .
+      dockerfile: services/resume/Dockerfile
     environment:
       PORT: 8002
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -101,7 +105,9 @@ services:
       retries: 5
 
   parsing-service:
-    build: ./services/parsing
+    build:
+      context: .
+      dockerfile: services/parsing/Dockerfile
     environment:
       PORT: 8003
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -130,7 +136,9 @@ services:
       retries: 5
 
   job-service:
-    build: ./services/job
+    build:
+      context: .
+      dockerfile: services/job/Dockerfile
     environment:
       PORT: 8004
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -153,7 +161,9 @@ services:
       retries: 5
 
   embedding-service:
-    build: ./services/embedding
+    build:
+      context: .
+      dockerfile: services/embedding/Dockerfile
     environment:
       PORT: 8005
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -181,7 +191,9 @@ services:
       retries: 5
 
   matching-service:
-    build: ./services/matching
+    build:
+      context: .
+      dockerfile: services/matching/Dockerfile
     environment:
       PORT: 8006
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -207,7 +219,9 @@ services:
       retries: 5
 
   llm-service:
-    build: ./services/llm
+    build:
+      context: .
+      dockerfile: services/llm/Dockerfile
     environment:
       PORT: 8007
       CONSUL_HTTP_ADDR: http://consul:8500

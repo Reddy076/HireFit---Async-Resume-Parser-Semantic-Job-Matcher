@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+*.db
+.pytest_cache
+postgres-data
+consul-data
+s3mock-data
+kafka-data
+minio-data
