@@ -1,0 +1,33 @@
+import os
+from datetime import datetime, timedelta, timezone
+from jose import jwt
+import bcrypt
+
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
+JWT_ALG = "HS256"
+ACCESS_MIN = int(os.getenv("JWT_ACCESS_MIN", "30"))
+REFRESH_DAYS = int(os.getenv("JWT_REFRESH_DAYS", "7"))
+
+
+def hash_password(pw: str) -> str:
+    return bcrypt.hashpw(pw.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(pw: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(pw.encode("utf-8")[:72], hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def _encode(sub: str, role: str, minutes: int = 30, days: int = 0) -> str:
+    exp = datetime.now(timezone.utc) + (timedelta(days=days) if days else timedelta(minutes=minutes))
+    return jwt.encode({"sub": sub, "role": role, "exp": exp}, JWT_SECRET, algorithm=JWT_ALG)
+
+
+def create_tokens(user_id: str, role: str) -> tuple[str, str]:
+    return _encode(user_id, role, minutes=ACCESS_MIN), _encode(user_id, role, days=REFRESH_DAYS)
+
+
+def decode_token(token: str) -> dict:
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])

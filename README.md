@@ -11,3 +11,11 @@ docker compose up --build
 ```
 
 See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
+
+## Cycle 1 - Auth + Upload
+- `POST /api/v1/auth/register {email,password,role}` -> 201
+- `POST /api/v1/auth/login` -> {access_token, refresh_token}
+- `GET /api/v1/auth/me` with `Authorization: Bearer <access>`
+- `POST /api/v1/resumes/upload` (multipart PDF, <=10MB) -> 202 {resume_id, status: queued}
+- `GET /api/v1/resumes/{id}` -> metadata + status
+- Events: `resume.uploaded` to Kafka (logs if broker down), files to MinIO bucket `resumes`.
