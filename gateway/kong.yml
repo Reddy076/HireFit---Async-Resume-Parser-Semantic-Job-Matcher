@@ -34,6 +34,14 @@ services:
           - /api/v1/embeddings
         strip_path: false
 
+  - name: matching-service
+    url: http://matching-service:8006
+    routes:
+      - name: matching-route
+        paths:
+          - /api/v1/match
+        strip_path: false
+
 plugins:
   - name: correlation-id
     config:
