@@ -86,24 +86,32 @@ def handle_event(event: dict) -> dict:
 
 
 def _loop() -> None:
-    try:
-        from kafka import KafkaConsumer
-        consumer = KafkaConsumer(
-            TOPIC_IN,
-            bootstrap_servers=KAFKA_BOOTSTRAP,
-            group_id="parsing-service",
-            value_deserializer=lambda v: json.loads(v.decode()),
-            auto_offset_reset="earliest",
-            enable_auto_commit=True,
-        )
-    except Exception as e:
-        log.warning("kafka consumer unavailable, worker idle: %s", e)
-        return
-    for msg in consumer:
+    import time
+
+    while True:
         try:
-            handle_event(dict(msg.value))
+            from kafka import KafkaConsumer
+            consumer = KafkaConsumer(
+                TOPIC_IN,
+                bootstrap_servers=KAFKA_BOOTSTRAP,
+                group_id="parsing-service",
+                value_deserializer=lambda v: json.loads(v.decode()),
+                auto_offset_reset="earliest",
+                enable_auto_commit=True,
+            )
+        except Exception as e:
+            log.warning("kafka consumer unavailable, retrying: %s", e)
+            time.sleep(5)
+            continue
+        try:
+            for msg in consumer:
+                try:
+                    handle_event(dict(msg.value))
+                except Exception:
+                    log.exception("failed to handle %s", msg.value)
         except Exception:
-            log.exception("failed to handle %s", msg.value)
+            log.exception("consumer loop died, reconnecting")
+            time.sleep(5)
 
 
 def start_background() -> None:
