@@ -30,3 +30,8 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `job-service:8004` CRUD: `POST/GET /api/v1/jobs`, `GET/PATCH/DELETE /api/v1/jobs/{id}`.
 - Writes are recruiter-only with owner check; reads need any valid JWT (shared HS256 secret with auth-service; JWKS lands with Kong JWT plugin later).
 - Create emits `job.created`; Kong routes `/api/v1/jobs`.
+
+## Cycle 4 - Embedding + vector search
+- `embedding-service:8005`: chunking (120-word windows), `POST /api/v1/embeddings/resumes/{id}`, `/jobs/{id}`, `/search`.
+- Backends: `hash` default (dependency-free, 768d) and `st` (all-mpnet-base-v2 via requirements-ml.txt, Docker only, falls back to hash). Switching backends needs re-index.
+- Worker auto-indexes on `resume.parsed` + `job.created`. Vectors stored as JSON; pgvector ANN index is a later-cycle perf follow-up.
