@@ -30,17 +30,14 @@ services:
     ports:
       - "6379:6379"
 
-  minio:
-    image: quay.io/minio/minio:latest
-    command: server /data --console-address ":9001"
+  s3mock:
+    image: adobe/s3mock:latest
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      initialBuckets: resumes
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9090:9090"
     volumes:
-      - minio-data:/data
+      - s3mock-data:/s3mock
 
   kafka:
     image: apache/kafka:3.7.0
@@ -84,7 +81,7 @@ services:
       CONSUL_HTTP_ADDR: http://consul:8500
       SERVICE_NAME: resume-service
       DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://s3mock:9090
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -112,7 +109,7 @@ services:
       KAFKA_TOPIC_IN: resume.uploaded
       KAFKA_TOPIC_OUT: resume.parsed
       RESUME_API: http://resume-service:8002
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://s3mock:9090
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -266,5 +263,5 @@ services:
 volumes:
   postgres-data:
   consul-data:
-  minio-data:
+  s3mock-data:
   kafka-data:

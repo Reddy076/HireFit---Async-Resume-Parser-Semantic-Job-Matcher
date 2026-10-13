@@ -21,12 +21,15 @@ _thread: threading.Thread | None = None
 
 
 def s3_get(key: str) -> bytes:
+    from botocore.config import Config
+
     s3 = boto3.client(
         "s3",
-        endpoint_url=os.getenv("S3_ENDPOINT", "http://minio:9000"),
+        endpoint_url=os.getenv("S3_ENDPOINT", "http://s3mock:9090"),
         aws_access_key_id=os.getenv("S3_ACCESS_KEY", "minioadmin"),
         aws_secret_access_key=os.getenv("S3_SECRET_KEY", "minioadmin"),
         region_name="us-east-1",
+        config=Config(s3={"addressing_style": "path"}),
     )
     obj = s3.get_object(Bucket=S3_BUCKET, Key=key)
     return obj["Body"].read()
