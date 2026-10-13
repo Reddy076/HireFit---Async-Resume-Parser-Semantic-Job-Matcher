@@ -35,3 +35,8 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `embedding-service:8005`: chunking (120-word windows), `POST /api/v1/embeddings/resumes/{id}`, `/jobs/{id}`, `/search`.
 - Backends: `hash` default (dependency-free, 768d) and `st` (all-mpnet-base-v2 via requirements-ml.txt, Docker only, falls back to hash). Switching backends needs re-index.
 - Worker auto-indexes on `resume.parsed` + `job.created`. Vectors stored as JSON; pgvector ANN index is a later-cycle perf follow-up.
+
+## Cycle 5 - Matching orchestrator
+- `matching-service:8006`: `POST /api/v1/match/single {resume_id, job_id}`, `POST /api/v1/match/job/{job_id} {top_k, limit}`, `GET /api/v1/match/resume/{rid}/job/{jid}`.
+- Score = 0.7*rerank + 0.3*skill-overlap, persisted in `matches` (unique per resume+job, idempotent re-run).
+- Rerank backends: `heuristic` default, `ce` (ms-marco-MiniLM, Docker only, falls back). Bulk flow: embedding search → per-resume rerank → ranked store.

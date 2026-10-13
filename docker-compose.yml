@@ -182,6 +182,32 @@ services:
       interval: 10s
       retries: 5
 
+  matching-service:
+    build: ./services/matching
+    environment:
+      PORT: 8006
+      CONSUL_HTTP_ADDR: http://consul:8500
+      SERVICE_NAME: matching-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      JWT_SECRET: dev-secret-change-me
+      RESUME_API: http://resume-service:8002
+      JOB_API: http://job-service:8004
+      EMBED_API: http://embedding-service:8005
+      RERANK_BACKEND: heuristic
+    ports:
+      - "8006:8006"
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      embedding-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health')"]
+      interval: 10s
+      retries: 5
+
   kong:
     image: kong:3.7
     environment:
@@ -199,6 +225,7 @@ services:
       - resume-service
       - job-service
       - embedding-service
+      - matching-service
 
 volumes:
   postgres-data:
