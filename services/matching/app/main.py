@@ -128,6 +128,15 @@ def get_match(resume_id: str, job_id: str, db: Session = Depends(get_db), user: 
     return _to_dict(row)
 
 
+@app.get("/internal/matches/resume/{resume_id}/job/{job_id}")
+def internal_get_match(resume_id: str, job_id: str, db: Session = Depends(get_db)):
+    # Internal-only: explainer-service fetch. mTLS/network-policy lands in Cycle 9.
+    row = db.query(Match).filter(Match.resume_id == resume_id, Match.job_id == job_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="not found")
+    return _to_dict(row)
+
+
 @app.get("/metrics")
 def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

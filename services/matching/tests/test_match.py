@@ -83,6 +83,14 @@ def test_single_requires_auth():
     assert client.post("/api/v1/match/single", json={"resume_id": "r1", "job_id": "j1"}).status_code == 401
 
 
+def test_internal_get_no_auth():
+    client.post("/api/v1/match/single", json={"resume_id": "r1", "job_id": "j1"}, headers=CAND)
+    r = client.get("/api/v1/match/resume/r1/job/j1".replace("/api/v1/match", "/internal/matches"))
+    assert r.status_code == 200
+    assert r.json()["resume_id"] == "r1"
+    assert client.get("/internal/matches/resume/zz/job/j1").status_code == 404
+
+
 def test_bulk_ranks_and_gates_role():
     match_main.search_chunks = lambda text, top_k: [
         {"resume_id": "r2", "score": 0.1},
