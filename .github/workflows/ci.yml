@@ -36,3 +36,12 @@ jobs:
           python-version: "3.11"
       - run: pip install -r services/resume/requirements.txt
       - run: python -m pytest services/resume/tests -v
+  test-parsing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r services/parsing/requirements.txt
+      - run: python -m pytest services/parsing/tests -v

@@ -65,10 +65,9 @@ PW = "password123"
 
 
 def setup_module():
-    # Clean slate per file run.
-    with TestingSession() as db:
-        db.execute(Base.metadata.tables["users"].delete())
-        db.commit()
+    # Hermetic: recreate table so stale test DB files never break schema.
+    Base.metadata.tables["users"].drop(bind=test_engine, checkfirst=True)
+    Base.metadata.tables["users"].create(bind=test_engine, checkfirst=True)
     fake_redis.sets.clear()
 
 

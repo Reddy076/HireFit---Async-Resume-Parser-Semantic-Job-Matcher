@@ -19,3 +19,9 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `POST /api/v1/resumes/upload` (multipart PDF, <=10MB) -> 202 {resume_id, status: queued}
 - `GET /api/v1/resumes/{id}` -> metadata + status
 - Events: `resume.uploaded` to Kafka (logs if broker down), files to MinIO bucket `resumes`.
+
+## Cycle 2 - Parsing worker
+- `parsing-service:8003` consumes `resume.uploaded`, extracts text with PyMuPDF, splits sections (header/experience/skills/education/projects/certifications/summary), PATCHes `resume-service`, emits `resume.parsed`.
+- Scanned PDFs (no text layer) are marked `needs_ocr`; OCR lands in a later cycle.
+- `GET /api/v1/resumes/{id}` now returns `status`, `has_parsed`, `parsed`.
+- Existing DBs auto-upgrade via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.

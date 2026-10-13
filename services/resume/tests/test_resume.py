@@ -46,9 +46,8 @@ VALID_PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
 
 
 def setup_module():
-    with TestingSession() as db:
-        db.execute(Base.metadata.tables["resumes"].delete())
-        db.commit()
+    Base.metadata.tables["resumes"].drop(bind=test_engine, checkfirst=True)
+    Base.metadata.tables["resumes"].create(bind=test_engine, checkfirst=True)
     calls["s3"].clear()
     calls["events"].clear()
 
@@ -102,6 +101,21 @@ def test_upload_ok_202_and_side_effects():
 
 def test_get_missing_404():
     assert client.get("/api/v1/resumes/does-not-exist").status_code == 404
+
+
+def test_internal_set_parsed():
+    r = _upload(VALID_PDF)
+    resume_id = r.json()["resume_id"]
+    p = client.patch(f"/internal/resumes/{resume_id}/parsed", json={"status": "parsed", "parsed": {"skills": ["python"]}})
+    assert p.status_code == 200
+    g = client.get(f"/api/v1/resumes/{resume_id}").json()
+    assert g["status"] == "parsed"
+    assert g["has_parsed"] is True
+    assert g["parsed"]["skills"] == ["python"]
+
+
+def test_internal_set_parsed_missing_404():
+    assert client.patch("/internal/resumes/does-not-exist/parsed", json={"parsed": {}}).status_code == 404
 
 
 def teardown_module():
