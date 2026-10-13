@@ -29,7 +29,11 @@ def s3_get(key: str) -> bytes:
         aws_access_key_id=os.getenv("S3_ACCESS_KEY", "minioadmin"),
         aws_secret_access_key=os.getenv("S3_SECRET_KEY", "minioadmin"),
         region_name="us-east-1",
-        config=Config(s3={"addressing_style": "path"}),
+        config=Config(
+            s3={"addressing_style": "path"},
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+        ),
     )
     obj = s3.get_object(Bucket=S3_BUCKET, Key=key)
     return obj["Body"].read()
