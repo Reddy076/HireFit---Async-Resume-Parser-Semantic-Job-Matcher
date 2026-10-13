@@ -208,6 +208,32 @@ services:
       interval: 10s
       retries: 5
 
+  llm-service:
+    build: ./services/llm
+    environment:
+      PORT: 8007
+      CONSUL_HTTP_ADDR: http://consul:8500
+      SERVICE_NAME: llm-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      JWT_SECRET: dev-secret-change-me
+      RESUME_API: http://resume-service:8002
+      JOB_API: http://job-service:8004
+      MATCH_API: http://matching-service:8006
+      LLM_BACKEND: heuristic
+    ports:
+      - "8007:8007"
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      matching-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8007/health')"]
+      interval: 10s
+      retries: 5
+
   kong:
     image: kong:3.7
     environment:
@@ -226,6 +252,7 @@ services:
       - job-service
       - embedding-service
       - matching-service
+      - llm-service
 
 volumes:
   postgres-data:

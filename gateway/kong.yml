@@ -42,6 +42,14 @@ services:
           - /api/v1/match
         strip_path: false
 
+  - name: llm-service
+    url: http://llm-service:8007
+    routes:
+      - name: llm-route
+        paths:
+          - /api/v1/explain
+        strip_path: false
+
 plugins:
   - name: correlation-id
     config:
