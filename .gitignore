@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+.env
+postgres-data/
+minio-data/
+consul-data/
+kafka-data/
