@@ -40,3 +40,7 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `matching-service:8006`: `POST /api/v1/match/single {resume_id, job_id}`, `POST /api/v1/match/job/{job_id} {top_k, limit}`, `GET /api/v1/match/resume/{rid}/job/{jid}`.
 - Score = 0.7*rerank + 0.3*skill-overlap, persisted in `matches` (unique per resume+job, idempotent re-run).
 - Rerank backends: `heuristic` default, `ce` (ms-marco-MiniLM, Docker only, falls back). Bulk flow: embedding search → per-resume rerank → ranked store.
+
+## Cycle 6 - RAG explainer
+- `llm-service:8007`: `POST /api/v1/explain {resume_id, job_id, kind}` with kinds `explain` (fit + [section] citations), `gaps` (2-week plan per missing skill), `rewrite` (tailored bullets). `GET /api/v1/explain/logs` history.
+- Backends: `heuristic` default (template over real scores, offline), `ollama` (any model via OLLAMA_HOST, falls back to heuristic). Every generation logged with prompt + context sections.
