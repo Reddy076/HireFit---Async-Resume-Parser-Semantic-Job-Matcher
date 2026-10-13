@@ -62,6 +62,9 @@ services:
       PORT: 8001
       CONSUL_HTTP_ADDR: http://consul:8500
       SERVICE_NAME: auth-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: dev-secret-change-me
     ports:
       - "8001:8001"
     depends_on:
@@ -80,6 +83,13 @@ services:
       PORT: 8002
       CONSUL_HTTP_ADDR: http://consul:8500
       SERVICE_NAME: resume-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET: resumes
+      KAFKA_BOOTSTRAP: kafka:9092
+      MAX_UPLOAD_BYTES: 10485760
     ports:
       - "8002:8002"
     depends_on:
