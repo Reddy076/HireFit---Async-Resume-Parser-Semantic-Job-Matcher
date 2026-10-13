@@ -9,3 +9,4 @@ kafka-python==2.0.2
 redis==5.2.1
 python-multipart==0.0.19
 python-jose[cryptography]==3.3.0
+pytest==8.3.4
