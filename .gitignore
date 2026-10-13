@@ -8,6 +8,7 @@ tsconfig.tsbuildinfo
 postgres-data/
 minio-data/
 s3mock-data/
+s3-data/
 consul-data/
 kafka-data/
 test_*.db

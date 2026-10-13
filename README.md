@@ -18,7 +18,7 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `GET /api/v1/auth/me` with `Authorization: Bearer <access>`
 - `POST /api/v1/resumes/upload` (multipart PDF, <=10MB) -> 202 {resume_id, status: queued}
 - `GET /api/v1/resumes/{id}` -> metadata + status
-- Events: `resume.uploaded` to Kafka (logs if broker down), files to S3Mock bucket `resumes`.
+- Events: `resume.uploaded` to Kafka (logs if broker down), files to LocalStack S3 bucket `resumes`.
 
 ## Cycle 2 - Parsing worker
 - `parsing-service:8003` consumes `resume.uploaded`, extracts text with PyMuPDF, splits sections (header/experience/skills/education/projects/certifications/summary), PATCHes `resume-service`, emits `resume.parsed`.

@@ -10,7 +10,7 @@ def s3_client():
     # Path-style addressing: required by S3Mock, compatible with MinIO/S3.
     return boto3.client(
         "s3",
-        endpoint_url=os.getenv("S3_ENDPOINT", "http://s3mock:9090"),
+        endpoint_url=os.getenv("S3_ENDPOINT", "http://s3:4566"),
         aws_access_key_id=os.getenv("S3_ACCESS_KEY", "minioadmin"),
         aws_secret_access_key=os.getenv("S3_SECRET_KEY", "minioadmin"),
         region_name="us-east-1",

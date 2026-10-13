@@ -30,14 +30,14 @@ services:
     ports:
       - "6380:6379"
 
-  s3mock:
-    image: adobe/s3mock:latest
+  s3:
+    image: localstack/localstack:latest
     environment:
-      initialBuckets: resumes
+      SERVICES: s3
     ports:
-      - "9090:9090"
+      - "4566:4566"
     volumes:
-      - s3mock-data:/s3mock
+      - s3-data:/var/lib/localstack
 
   kafka:
     image: apache/kafka:3.7.0
@@ -87,7 +87,7 @@ services:
       CONSUL_HTTP_ADDR: http://consul:8500
       SERVICE_NAME: resume-service
       DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
-      S3_ENDPOINT: http://s3mock:9090
+      S3_ENDPOINT: http://s3:4566
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -117,7 +117,7 @@ services:
       KAFKA_TOPIC_IN: resume.uploaded
       KAFKA_TOPIC_OUT: resume.parsed
       RESUME_API: http://resume-service:8002
-      S3_ENDPOINT: http://s3mock:9090
+      S3_ENDPOINT: http://s3:4566
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -280,4 +280,5 @@ volumes:
   postgres-data:
   consul-data:
   s3mock-data:
+  s3-data:
   kafka-data:
