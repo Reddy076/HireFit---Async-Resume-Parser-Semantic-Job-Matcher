@@ -112,6 +112,14 @@ def test_delete_owner_ok_and_gone():
     assert client.get(f"/api/v1/jobs/{job_id}", headers=REC).status_code == 404
 
 
+def test_internal_get_no_auth():
+    job_id = client.post("/api/v1/jobs", json=PAYLOAD, headers=REC).json()["id"]
+    r = client.get(f"/internal/jobs/{job_id}")
+    assert r.status_code == 200
+    assert r.json()["title"] == "Backend Engineer"
+    assert client.get("/internal/jobs/does-not-exist").status_code == 404
+
+
 def teardown_module():
     try:
         os.remove("test_job.db")
