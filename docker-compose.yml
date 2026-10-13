@@ -154,6 +154,34 @@ services:
       interval: 10s
       retries: 5
 
+  embedding-service:
+    build: ./services/embedding
+    environment:
+      PORT: 8005
+      CONSUL_HTTP_ADDR: http://consul:8500
+      SERVICE_NAME: embedding-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      RESUME_API: http://resume-service:8002
+      JOB_API: http://job-service:8004
+      KAFKA_BOOTSTRAP: kafka:9092
+      EMBED_BACKEND: hash
+      WORKER_ENABLED: 1
+    ports:
+      - "8005:8005"
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      resume-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 10s
+      retries: 5
+
   kong:
     image: kong:3.7
     environment:
@@ -170,6 +198,7 @@ services:
       - auth-service
       - resume-service
       - job-service
+      - embedding-service
 
 volumes:
   postgres-data:

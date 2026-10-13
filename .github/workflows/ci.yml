@@ -54,3 +54,12 @@ jobs:
           python-version: "3.11"
       - run: pip install -r services/job/requirements.txt
       - run: python -m pytest services/job/tests -v
+  test-embedding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r services/embedding/requirements.txt
+      - run: python -m pytest services/embedding/tests -v

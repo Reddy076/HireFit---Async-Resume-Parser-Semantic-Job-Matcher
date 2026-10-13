@@ -86,6 +86,15 @@ def get_job(job_id: str, db: Session = Depends(get_db), user: dict = Depends(cur
     return to_out(job)
 
 
+@app.get("/internal/jobs/{job_id}")
+def internal_get_job(job_id: str, db: Session = Depends(get_db)):
+    # Internal-only: embedding-service fetch. mTLS/network-policy lands in Cycle 9.
+    job = db.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="not found")
+    return to_out(job).model_dump()
+
+
 @app.patch("/api/v1/jobs/{job_id}", response_model=JobOut)
 def update_job(job_id: str, body: JobUpdate, db: Session = Depends(get_db), user: dict = Depends(require_recruiter)):
     job = db.get(Job, job_id)
