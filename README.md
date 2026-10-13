@@ -25,3 +25,8 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - Scanned PDFs (no text layer) are marked `needs_ocr`; OCR lands in a later cycle.
 - `GET /api/v1/resumes/{id}` now returns `status`, `has_parsed`, `parsed`.
 - Existing DBs auto-upgrade via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+
+## Cycle 3 - Job service
+- `job-service:8004` CRUD: `POST/GET /api/v1/jobs`, `GET/PATCH/DELETE /api/v1/jobs/{id}`.
+- Writes are recruiter-only with owner check; reads need any valid JWT (shared HS256 secret with auth-service; JWKS lands with Kong JWT plugin later).
+- Create emits `job.created`; Kong routes `/api/v1/jobs`.
