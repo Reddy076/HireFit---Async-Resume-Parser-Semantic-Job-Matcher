@@ -1,0 +1,4 @@
+# Heavy ML deps, installed in Docker only (unit tests use the hash backend).
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1
+sentence-transformers==3.1.1
