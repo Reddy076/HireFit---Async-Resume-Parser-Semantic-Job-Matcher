@@ -4,7 +4,14 @@ from fastapi import Depends, FastAPI, HTTPException, Response, status
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from sqlalchemy.orm import Session
 import sys, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "common"))
+_COMMON_CANDIDATES = (
+    pathlib.Path(__file__).resolve().parents[2] / "common",
+    pathlib.Path("/code/common"),
+)
+for _candidate in _COMMON_CANDIDATES:
+    if (_candidate / "consul.py").exists():
+        sys.path.insert(0, str(_candidate))
+        break
 from consul import register_with_consul
 from .db import Base, engine, get_db
 from .models import User

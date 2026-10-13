@@ -21,12 +21,19 @@ _thread: threading.Thread | None = None
 
 
 def s3_get(key: str) -> bytes:
+    from botocore.config import Config
+
     s3 = boto3.client(
         "s3",
-        endpoint_url=os.getenv("S3_ENDPOINT", "http://minio:9000"),
+        endpoint_url=os.getenv("S3_ENDPOINT", "http://s3:4566"),
         aws_access_key_id=os.getenv("S3_ACCESS_KEY", "minioadmin"),
         aws_secret_access_key=os.getenv("S3_SECRET_KEY", "minioadmin"),
         region_name="us-east-1",
+        config=Config(
+            s3={"addressing_style": "path"},
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+        ),
     )
     obj = s3.get_object(Bucket=S3_BUCKET, Key=key)
     return obj["Body"].read()
@@ -79,24 +86,32 @@ def handle_event(event: dict) -> dict:
 
 
 def _loop() -> None:
-    try:
-        from kafka import KafkaConsumer
-        consumer = KafkaConsumer(
-            TOPIC_IN,
-            bootstrap_servers=KAFKA_BOOTSTRAP,
-            group_id="parsing-service",
-            value_deserializer=lambda v: json.loads(v.decode()),
-            auto_offset_reset="earliest",
-            enable_auto_commit=True,
-        )
-    except Exception as e:
-        log.warning("kafka consumer unavailable, worker idle: %s", e)
-        return
-    for msg in consumer:
+    import time
+
+    while True:
         try:
-            handle_event(dict(msg.value))
+            from kafka import KafkaConsumer
+            consumer = KafkaConsumer(
+                TOPIC_IN,
+                bootstrap_servers=KAFKA_BOOTSTRAP,
+                group_id="parsing-service",
+                value_deserializer=lambda v: json.loads(v.decode()),
+                auto_offset_reset="earliest",
+                enable_auto_commit=True,
+            )
+        except Exception as e:
+            log.warning("kafka consumer unavailable, retrying: %s", e)
+            time.sleep(5)
+            continue
+        try:
+            for msg in consumer:
+                try:
+                    handle_event(dict(msg.value))
+                except Exception:
+                    log.exception("failed to handle %s", msg.value)
         except Exception:
-            log.exception("failed to handle %s", msg.value)
+            log.exception("consumer loop died, reconnecting")
+            time.sleep(5)
 
 
 def start_background() -> None:

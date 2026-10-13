@@ -6,7 +6,14 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import sys, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "common"))
+_COMMON_CANDIDATES = (
+    pathlib.Path(__file__).resolve().parents[2] / "common",
+    pathlib.Path("/code/common"),
+)
+for _candidate in _COMMON_CANDIDATES:
+    if (_candidate / "consul.py").exists():
+        sys.path.insert(0, str(_candidate))
+        break
 from consul import register_with_consul
 from .auth import current_user, require_recruiter
 from .db import Base, engine, get_db

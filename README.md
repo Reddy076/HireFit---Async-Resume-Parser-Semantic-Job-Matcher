@@ -18,7 +18,7 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 - `GET /api/v1/auth/me` with `Authorization: Bearer <access>`
 - `POST /api/v1/resumes/upload` (multipart PDF, <=10MB) -> 202 {resume_id, status: queued}
 - `GET /api/v1/resumes/{id}` -> metadata + status
-- Events: `resume.uploaded` to Kafka (logs if broker down), files to MinIO bucket `resumes`.
+- Events: `resume.uploaded` to Kafka (logs if broker down), files to LocalStack S3 bucket `resumes`.
 
 ## Cycle 2 - Parsing worker
 - `parsing-service:8003` consumes `resume.uploaded`, extracts text with PyMuPDF, splits sections (header/experience/skills/education/projects/certifications/summary), PATCHes `resume-service`, emits `resume.parsed`.
@@ -44,3 +44,8 @@ See `gateway/kong.yml` for routes, `docker-compose.yml` for services.
 ## Cycle 6 - RAG explainer
 - `llm-service:8007`: `POST /api/v1/explain {resume_id, job_id, kind}` with kinds `explain` (fit + [section] citations), `gaps` (2-week plan per missing skill), `rewrite` (tailored bullets). `GET /api/v1/explain/logs` history.
 - Backends: `heuristic` default (template over real scores, offline), `ollama` (any model via OLLAMA_HOST, falls back to heuristic). Every generation logged with prompt + context sections.
+
+## Cycle 7 - Frontend
+- Next.js 14 (`web/`, served on :3000 via compose): landing with live service status, login/register with role routing.
+- Candidate: PDF upload → status polling → parsed section viewer → single match with score bar + skill gaps → explain/gaps/rewrite tabs.
+- Recruiter: job post + list, per-job bulk rank table with CSV export.

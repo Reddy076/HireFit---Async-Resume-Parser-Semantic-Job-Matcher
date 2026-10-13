@@ -17,7 +17,7 @@ services:
       POSTGRES_PASSWORD: hirefit
       POSTGRES_DB: hirefit
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -28,19 +28,14 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+  s3:
+    build:
+      context: .
+      dockerfile: infra/s3/Dockerfile
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio-data:/data
+      - "4566:4566"
 
   kafka:
     image: apache/kafka:3.7.0
@@ -48,16 +43,24 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
       - "29092:29092"
     volumes:
-      - kafka-data:/var/lib/kakfa/data
+      - kafka-data:/var/lib/kafka/data
 
   auth-service:
-    build: ./services/auth
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
     environment:
       PORT: 8001
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -78,13 +81,15 @@ services:
       retries: 5
 
   resume-service:
-    build: ./services/resume
+    build:
+      context: .
+      dockerfile: services/resume/Dockerfile
     environment:
       PORT: 8002
       CONSUL_HTTP_ADDR: http://consul:8500
       SERVICE_NAME: resume-service
       DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://s3:4566
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -103,7 +108,9 @@ services:
       retries: 5
 
   parsing-service:
-    build: ./services/parsing
+    build:
+      context: .
+      dockerfile: services/parsing/Dockerfile
     environment:
       PORT: 8003
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -112,7 +119,7 @@ services:
       KAFKA_TOPIC_IN: resume.uploaded
       KAFKA_TOPIC_OUT: resume.parsed
       RESUME_API: http://resume-service:8002
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://s3:4566
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: resumes
@@ -132,7 +139,9 @@ services:
       retries: 5
 
   job-service:
-    build: ./services/job
+    build:
+      context: .
+      dockerfile: services/job/Dockerfile
     environment:
       PORT: 8004
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -155,7 +164,9 @@ services:
       retries: 5
 
   embedding-service:
-    build: ./services/embedding
+    build:
+      context: .
+      dockerfile: services/embedding/Dockerfile
     environment:
       PORT: 8005
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -183,7 +194,9 @@ services:
       retries: 5
 
   matching-service:
-    build: ./services/matching
+    build:
+      context: .
+      dockerfile: services/matching/Dockerfile
     environment:
       PORT: 8006
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -209,7 +222,9 @@ services:
       retries: 5
 
   llm-service:
-    build: ./services/llm
+    build:
+      context: .
+      dockerfile: services/llm/Dockerfile
     environment:
       PORT: 8007
       CONSUL_HTTP_ADDR: http://consul:8500
@@ -234,6 +249,15 @@ services:
       interval: 10s
       retries: 5
 
+  web:
+    build: ./web
+    environment:
+      NEXT_PUBLIC_GATEWAY_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - kong
+
   kong:
     image: kong:3.7
     environment:
@@ -243,7 +267,7 @@ services:
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
     ports:
       - "8000:8000"
-      - "8001:8001"
+      - "8101:8001"
     volumes:
       - ./gateway/kong.yml:/kong/kong.yml:ro
     depends_on:
@@ -257,5 +281,6 @@ services:
 volumes:
   postgres-data:
   consul-data:
-  minio-data:
+  s3mock-data:
+  s3-data:
   kafka-data:

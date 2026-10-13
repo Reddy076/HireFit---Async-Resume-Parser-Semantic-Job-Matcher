@@ -39,29 +39,36 @@ def handle_job_created(event: dict) -> str:
 
 def _loop() -> None:
     import json
+    import time
 
-    try:
-        from kafka import KafkaConsumer
-        consumer = KafkaConsumer(
-            "resume.parsed",
-            "job.created",
-            bootstrap_servers=KAFKA_BOOTSTRAP,
-            group_id="embedding-service",
-            value_deserializer=lambda v: json.loads(v.decode()),
-            auto_offset_reset="earliest",
-            enable_auto_commit=True,
-        )
-    except Exception as e:
-        log.warning("kafka consumer unavailable, worker idle: %s", e)
-        return
-    for msg in consumer:
+    while True:
         try:
-            if msg.topic == "resume.parsed":
-                handle_resume_parsed(dict(msg.value))
-            elif msg.topic == "job.created":
-                handle_job_created(dict(msg.value))
+            from kafka import KafkaConsumer
+            consumer = KafkaConsumer(
+                "resume.parsed",
+                "job.created",
+                bootstrap_servers=KAFKA_BOOTSTRAP,
+                group_id="embedding-service",
+                value_deserializer=lambda v: json.loads(v.decode()),
+                auto_offset_reset="earliest",
+                enable_auto_commit=True,
+            )
+        except Exception as e:
+            log.warning("kafka consumer unavailable, retrying: %s", e)
+            time.sleep(5)
+            continue
+        try:
+            for msg in consumer:
+                try:
+                    if msg.topic == "resume.parsed":
+                        handle_resume_parsed(dict(msg.value))
+                    elif msg.topic == "job.created":
+                        handle_job_created(dict(msg.value))
+                except Exception:
+                    log.exception("failed to handle %s %s", msg.topic, msg.value)
         except Exception:
-            log.exception("failed to handle %s %s", msg.topic, msg.value)
+            log.exception("consumer loop died, reconnecting")
+            time.sleep(5)
 
 
 def start_background() -> None:
