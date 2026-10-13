@@ -1,9 +1,8 @@
 import os
 from datetime import datetime, timedelta, timezone
 from jose import jwt
-from passlib.context import CryptContext
+import bcrypt
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALG = "HS256"
 ACCESS_MIN = int(os.getenv("JWT_ACCESS_MIN", "30"))
@@ -11,11 +10,14 @@ REFRESH_DAYS = int(os.getenv("JWT_REFRESH_DAYS", "7"))
 
 
 def hash_password(pw: str) -> str:
-    return pwd_ctx.hash(pw)
+    return bcrypt.hashpw(pw.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(pw: str, hashed: str) -> bool:
-    return pwd_ctx.verify(pw, hashed)
+    try:
+        return bcrypt.checkpw(pw.encode("utf-8")[:72], hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def _encode(sub: str, role: str, minutes: int = 30, days: int = 0) -> str:
