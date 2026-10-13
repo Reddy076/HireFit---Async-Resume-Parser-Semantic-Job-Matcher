@@ -131,6 +131,29 @@ services:
       interval: 10s
       retries: 5
 
+  job-service:
+    build: ./services/job
+    environment:
+      PORT: 8004
+      CONSUL_HTTP_ADDR: http://consul:8500
+      SERVICE_NAME: job-service
+      DATABASE_URL: postgresql+psycopg2://hirefit:hirefit@postgres:5432/hirefit
+      JWT_SECRET: dev-secret-change-me
+      KAFKA_BOOTSTRAP: kafka:9092
+    ports:
+      - "8004:8004"
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 10s
+      retries: 5
+
   kong:
     image: kong:3.7
     environment:
@@ -146,6 +169,7 @@ services:
     depends_on:
       - auth-service
       - resume-service
+      - job-service
 
 volumes:
   postgres-data:
