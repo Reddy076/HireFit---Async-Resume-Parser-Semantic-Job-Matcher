@@ -1,8 +1,10 @@
 import os
 import uuid
+import json
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 import sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "common"))
@@ -21,6 +23,10 @@ MAX_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    # Lightweight upgrade for pre-cycle-2 databases (fresh installs no-op).
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE resumes ADD COLUMN IF NOT EXISTS parsed_json TEXT"))
+        conn.commit()
     register_with_consul(SERVICE_NAME, PORT)
     yield
 
@@ -70,7 +76,22 @@ def get_resume(resume_id: str, db: Session = Depends(get_db)):
         "size_bytes": row.size_bytes,
         "status": row.status,
         "s3_key": row.s3_key,
+        "has_parsed": row.parsed_json is not None,
+        "parsed": json.loads(row.parsed_json) if row.parsed_json else None,
     }
+
+
+@app.patch("/internal/resumes/{resume_id}/parsed")
+def set_parsed(resume_id: str, body: dict, db: Session = Depends(get_db)):
+    # Internal-only: parsing-service callback. mTLS/network-policy lands in Cycle 9.
+    row = db.get(Resume, resume_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="not found")
+    row.status = str(body.get("status", "parsed"))
+    row.parsed_json = json.dumps(body.get("parsed", {}))
+    db.commit()
+    REQUESTS.labels(SERVICE_NAME, "/internal/resumes/parsed").inc()
+    return {"resume_id": resume_id, "status": row.status}
 
 
 @app.get("/metrics")
