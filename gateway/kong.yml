@@ -26,6 +26,14 @@ services:
           - /api/v1/jobs
         strip_path: false
 
+  - name: embedding-service
+    url: http://embedding-service:8005
+    routes:
+      - name: embedding-route
+        paths:
+          - /api/v1/embeddings
+        strip_path: false
+
 plugins:
   - name: correlation-id
     config:
