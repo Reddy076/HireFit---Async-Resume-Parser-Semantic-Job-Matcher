@@ -1,0 +1,25 @@
+_format_version: "3.0"
+
+services:
+  - name: auth-service
+    url: http://auth-service:8001
+    routes:
+      - name: auth-route
+        paths:
+          - /api/v1/auth
+        strip_path: false
+
+  - name: resume-service
+    url: http://resume-service:8002
+    routes:
+      - name: resume-route
+        paths:
+          - /api/v1/resumes
+        strip_path: false
+
+plugins:
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+  - name: prometheus
