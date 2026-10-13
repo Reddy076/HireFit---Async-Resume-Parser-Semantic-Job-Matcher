@@ -234,6 +234,15 @@ services:
       interval: 10s
       retries: 5
 
+  web:
+    build: ./web
+    environment:
+      NEXT_PUBLIC_GATEWAY_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - kong
+
   kong:
     image: kong:3.7
     environment:
