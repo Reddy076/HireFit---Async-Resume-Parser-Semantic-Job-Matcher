@@ -72,3 +72,12 @@ jobs:
           python-version: "3.11"
       - run: pip install -r services/matching/requirements.txt
       - run: python -m pytest services/matching/tests -v
+  test-llm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r services/llm/requirements.txt
+      - run: python -m pytest services/llm/tests -v
