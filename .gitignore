@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 node_modules/
 .next/
+tsconfig.tsbuildinfo
 .env
 postgres-data/
 minio-data/
